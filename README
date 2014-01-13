@@ -1,0 +1,122 @@
+SDHT (Simplified distributable hash table)
+http://www.xalx.net/sdht
+
+This is a simplified kind of a DHT (Distributed Hash Table) storage.
+
+There exists many algorithms for DHT:s these days (Chord, CAN,
+Kademlia, Pastry, Tapestry, Symphony...) and they are all pretty stable
+to use. While not quite intuitive to most users they aren't that hard
+to grasp.
+
+However I wanted to try something a little simpler still. Thus I
+created the simplified-dht. Basically its a just a ring-storage where
+I removed the speedup (the finger table) algorithm that calculates at
+each node where to go to next. Instead we just run around the ring
+until we find a suitable spot. I wanted to enable the use of adding
+and removing nodes would re-transfer data between the nodes to force
+the persistancy to work.
+
+The storage parts has also been keept simplfied. These are small
+WSGI-server applications that abstracts parts of the Berkeley DB to
+the HTTP protocol.
+
+Why so simplified? Cause KISS (tm) works! Also this shouldn't be to
+hard to extend to a fully working DHT in due time (refactoring rox).
+
+Unfortunatly no unit-tests where included at this time. However a
+simple test that can be run on a local machine is included in the main
+function of the sdht package. The only requirements is that 4
+minor-wsgi-storage:s have been launched locally at the ports 8000-8003
+(one per port). This should be enough to use as reference for this
+small project.
+
+
+COPYRIGHT AND LICENSE
+=====================
+
+This software was written by me, Alexander Schüssler 
+<alex at xalx dot net>.
+
+This is distributed under the GNU Lesser GPL. See LICENSE for the
+license terms.
+
+
+
+INSTALLATION
+============
+
+Either just copy the python files to appropriate locations or run them
+from the source (src) directory.
+
+The project allows a debian package to be built via scons (and thus
+installable on debian-flavor machines.
+
+Execute:
+$> scons debian
+
+And the .deb file should appear in the same directory. Run dpkg -i or
+similar to install it on a .deb flavor machine. Or put the file in a
+debian repository and allow machines to automatically install it.
+
+Also note that the minor-wsgi-storage.py get renamed to
+minor-wsgi-storage and made as an executable.
+
+
+
+USAGE
+=====
+
+$> is a normal shell prompt
+$python> is a normal python prompt
+
+
+
+To launch a storage:
+$> minor-wsgi-storage -p 8000
+
+or
+$> python minor-wsgi-storage.py -p 8000
+
+This will launch a storage on the current machine at port 8000
+
+
+
+Once a storage has been launched it should be registered in the sdht
+handler.
+
+Tell the sdht a Node has joined:
+$python> import sdht
+$python> sdht.join(Node('127.0.0.1', '8000')
+
+This will tell the sdht that a Node on the local machine has joined
+the ring. X amounts of storages can be launched (even on the same
+machine as long as they use different ports).
+
+
+
+To set a key and value in the storage:
+$python>sdht.set("a key", "a value")
+
+A value is set in the storage
+
+
+
+To get a value from a key
+$python> sdht.get("a key")
+"a value"
+
+This returns the value set to the choosen key.
+
+
+
+The storage can handle any type of data (as long as it is
+"pickle-able"). But keys are required to be 'str'.
+
+
+
+To remove a Node from the sdht just run:
+$python> sdht.remove(Node('127.0.0.1', '8000')
+
+Once a Node is removed all its content will get transfered to an
+appropriate Node (as long as there exists any, otherwise it will get
+lost). While a node is being removed it won't return any response.
